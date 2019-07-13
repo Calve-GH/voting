@@ -1,8 +1,7 @@
 package com.github.calve.repository.datajpa;
 
-import com.github.calve.model.User;
 import com.github.calve.model.VoteLog;
-import org.springframework.data.jpa.repository.EntityGraph;
+import com.github.calve.to.TupleTo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -11,12 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Transactional(readOnly = true)
 public interface CrudVoteLogRepository extends JpaRepository<VoteLog, Integer> {
-
-    Optional<VoteLog> findByUserId(Integer id);
 
     @Modifying
     @Transactional
@@ -27,32 +23,28 @@ public interface CrudVoteLogRepository extends JpaRepository<VoteLog, Integer> {
     @Override
     VoteLog save(VoteLog voteLog);
 
-    VoteLog findByDateAndUser(LocalDate date, User user);
-
     List<VoteLog> findAll();
-
-    @EntityGraph(attributePaths = {"user", "restaurant"}, type = EntityGraph.EntityGraphType.LOAD)
-    @Query("SELECT v FROM VoteLog v ORDER BY v.date DESC")
-    List<VoteLog> findAllWithReferences();
 
     @Transactional
     @Override
     void deleteAll();
 
-    @Transactional
-    void deleteAllByDateBefore(LocalDate date);
-
-    //@Query("SELECT vl.date, vl.restaurant.id, COUNT(vl) FROM VoteLog vl group by vl.date, vl.restaurant.id")
     Long countVoteLogsByDateAndRestaurantId(LocalDate date, Integer id);
 
+/*    @Query("select new com.github.calve.to.RestaurantTo(r, count(v.id)) from Restaurant r left join VoteLog v " +
+            "on v.restaurant.id = r.id where r.id IN (SELECT mi.restaurant.id FROM MenuItem mi " +
+            "WHERE mi.date =current_date GROUP BY mi.restaurant.id) AND v.date = current_date OR v.date=null group by r.id")*/
+    //TODO BEFORE
+    @Query("SELECT new com.github.calve.to.TupleTo(v.date, v.restaurant, count(v.id)) FROM VoteLog v WHERE v.date =:date AND v.restaurant.id =:restaurantId GROUP BY v.date, v.restaurant")
+    List<TupleTo> countVoteLogsByDateAndRestaurant(@Param("date")LocalDate date, @Param("restaurantId")Integer restaurantId);
 
+    @Query("SELECT new com.github.calve.to.TupleTo(v.date, v.restaurant, count(v.id)) FROM VoteLog v WHERE v.date =:date GROUP BY v.date, v.restaurant")
+    List<TupleTo> countVoteLogsByDate(@Param("date")LocalDate date);
 
+    @Query("SELECT new com.github.calve.to.TupleTo(v.date, v.restaurant, count(v.id)) FROM VoteLog v WHERE v.restaurant.id =:restaurantId AND v.date < CURRENT_DATE GROUP BY v.date, v.restaurant")
+    List<TupleTo> countVoteLogsByRestaurant(@Param("restaurantId")Integer restaurantId);
 
-/*    The following query counts for every letter the number of countries with names that
-    start with that letter and the number of different currencies that are used by these countries:
-
-    SELECT SUBSTRING(c.name, 1, 1), COUNT(c), COUNT(DISTINCT c.currency)
-    FROM Country c
-    GROUP BY SUBSTRING(c.name, 1, 1);*/
+    @Query("SELECT new com.github.calve.to.TupleTo(v.date, v.restaurant, count(v.id)) FROM VoteLog v WHERE v.date < CURRENT_DATE GROUP BY v.date, v.restaurant")
+    List<TupleTo> countVoteLogs();
 
 }

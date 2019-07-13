@@ -1,11 +1,12 @@
 package com.github.calve.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
@@ -21,12 +22,14 @@ public class MenuItem extends AbstractBaseEntity {
     @Column(name = "date", nullable = false)
     @NotNull
     @DateTimeFormat(pattern = DATE_PATTERN)
+//    @JsonIgnore
     private LocalDate date;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restaurant_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @JsonIgnoreProperties(value = "items", allowSetters = true)
+    @JsonIgnoreProperties(value = {"name", "items"}, allowSetters = true)
+//    @JsonIgnore
     private Restaurant restaurant;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -38,9 +41,16 @@ public class MenuItem extends AbstractBaseEntity {
     @NotNull
     private Double price;
 
-    public MenuItem(Integer id, Restaurant menu, Dish dish, Double price) {
+    public MenuItem(Integer id, Restaurant restaurant, Dish dish, Double price) {
         super(id);
-        this.restaurant = menu;
+        this.restaurant = restaurant;
+        this.dish = dish;
+        this.price = price;
+    }
+
+    public MenuItem(Integer id, LocalDate date, Dish dish, Double price) {
+        super(id);
+        this.date = date;
         this.dish = dish;
         this.price = price;
     }
@@ -50,8 +60,8 @@ public class MenuItem extends AbstractBaseEntity {
         this.price = price;
     }
 
-    public MenuItem(Restaurant menu, Dish dish, Double price) {
-        this.restaurant = menu;
+    public MenuItem(Restaurant restaurant, Dish dish, Double price) {
+        this.restaurant = restaurant;
         this.dish = dish;
         this.price = price;
     }
@@ -63,16 +73,16 @@ public class MenuItem extends AbstractBaseEntity {
         return restaurant;
     }
 
+    public void setRestaurant(Restaurant restaurant) {
+        this.restaurant = restaurant;
+    }
+
     public LocalDate getDate() {
         return date;
     }
 
     public void setDate(LocalDate date) {
         this.date = date;
-    }
-
-    public void setRestaurant(Restaurant restaurant) {
-        this.restaurant = restaurant;
     }
 
     public Dish getDish() {
@@ -95,6 +105,7 @@ public class MenuItem extends AbstractBaseEntity {
     public String toString() {
         return new StringJoiner(", ", MenuItem.class.getSimpleName() + "[", "]")
                 .add("id=" + id)
+                .add("date=" + date)
                 .add("restaurantId=" + restaurant.id)
                 .add("dish=" + dish)
                 .add("price=" + price)

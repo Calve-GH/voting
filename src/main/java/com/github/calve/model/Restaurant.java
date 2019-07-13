@@ -1,10 +1,14 @@
 package com.github.calve.model;
 
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.annotations.Formula;
+import org.hibernate.annotations.Where;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.List;
 import java.util.StringJoiner;
 
@@ -14,16 +18,8 @@ import java.util.StringJoiner;
 public class Restaurant extends AbstractNamedEntity {
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "restaurant")//, cascade = CascadeType.REMOVE, orphanRemoval = true)
-//    @JsonIgnore
+    @Where(clause = "date=current_date")
     protected List<MenuItem> items;
-
-    public List<MenuItem> getItems() {
-        return items;
-    }
-
-    public void setItems(List<MenuItem> items) {
-        this.items = items;
-    }
 
     public Restaurant(Integer id, String name) {
         super(id, name);
@@ -34,6 +30,14 @@ public class Restaurant extends AbstractNamedEntity {
 
     public Restaurant(@NotNull String name) {
         this.name = name;
+    }
+
+    public List<MenuItem> getItems() {
+        return items;
+    }
+
+    public void setItems(List<MenuItem> items) {
+        this.items = items;
     }
 
     public String getName() {
@@ -51,6 +55,7 @@ public class Restaurant extends AbstractNamedEntity {
                 .add("name='" + name + "'")
                 .toString();
     }
+
     public String toStringWithItems() {
         StringJoiner stringJoiner = new StringJoiner(", ", Restaurant.class.getSimpleName() + "[", "]")
                 .add("id=" + id)

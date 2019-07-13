@@ -1,10 +1,14 @@
 package com.github.calve.web.controller;
 
 import com.github.calve.model.MenuItem;
-import com.github.calve.to.MenuTo;
+import com.github.calve.repository.datajpa.CrudMenuItemRepository;
+import com.github.calve.to.RestaurantTo;
+import com.github.calve.util.exception.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+
+import static com.github.calve.util.RestaurantToValidator.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,40 +17,54 @@ import java.util.List;
 @RequestMapping(value = MenuItemsRestController.REST_URL, produces = MediaType.APPLICATION_JSON_VALUE)
 public class MenuItemsRestController {
 
-    public static final String REST_URL = "/rest/admin/items";
+    public static final String REST_URL = "/rest/admin/items/";
+
+    private CrudMenuItemRepository menuItemRepository;
+
+    public MenuItemsRestController(CrudMenuItemRepository menuItemRepository) {
+        this.menuItemRepository = menuItemRepository;
+    }
 
     @GetMapping
     public List<MenuItem> getAllRestaurantMenuItems(@RequestParam Integer restaurantId, @RequestParam(required = false) LocalDate date) {
-        return null;//TODO
+
+        if (date == null) {
+            return menuItemRepository.findAllByRestaurantId(restaurantId);
+        }
+
+        return menuItemRepository.findAllByDateAndRestaurantId(date, restaurantId);
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(value = HttpStatus.NO_CONTENT)
-    public void saveMenuItems(@RequestParam Integer restaurantId, @RequestBody MenuTo menu) {
-        //TODO
+    @ResponseStatus(value = HttpStatus.CREATED)
+    public void saveMenuItems(@RequestParam Integer restaurantId, @RequestBody RestaurantTo restaurantTo) {
+        Integer savedMenuSize = menuItemRepository.countAllByDateAndRestaurantId(restaurantTo.getDate(), restaurantId);
+        validateMenuItemsOnSave(restaurantTo, savedMenuSize);
+        menuItemRepository.saveAll(restaurantTo.getItems());
     }
 
     @DeleteMapping
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
     public void deleteMenuByDate(@RequestParam Integer restaurantId, @RequestParam LocalDate date) {
-        //TODO
+        menuItemRepository.deleteAllByDateAndRestaurantId(date, restaurantId);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("{id}/")
     public MenuItem getMenuItemById(@PathVariable Integer id) {
-        return null;        //TODO
+        return menuItemRepository.findById(id).orElseThrow(() -> new NotFoundException("Menu item with this id not found"));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("{id}/")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
-    public void updateMenuItemById(@PathVariable Integer id, @RequestBody MenuItem item) {        //TODO id path needed?!
-        //TODO
+    public void updateMenuItemById(@PathVariable Integer id, @RequestBody MenuItem item) {
+        item.setId(id);
+        menuItemRepository.save(item);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("{id}/")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
     public void deleteMenuItemById(@PathVariable Integer id) {
-        //TODO
+        menuItemRepository.deleteById(id);
     }
 
 }
