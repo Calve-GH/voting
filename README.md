@@ -1,4 +1,4 @@
-<article class="markdown-body entry-content p-5" itemprop="text"><p>Design and implement a JSON API using Hibernate/Spring/SpringMVC <strong>without frontend</strong>.</p>
+<article class="markdown-body entry-content p-5" itemprop="text"><p>Design and implement a JSON API using Hibernate/Spring/SpringMVC <strong>without frontend</strong>.</p> 
 <p>The task is:</p>
 <p>Build a voting system for deciding where to have lunch.</p>
 <ul>
